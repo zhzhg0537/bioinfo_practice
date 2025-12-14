@@ -1,0 +1,71 @@
+iqtree3 \
+-s 02_Input_Data/Issidae_Supermatrix.fasta \
+-p 02_Input_Data/Issidae_Partitions.txt \
+-B 1000 \
+--alrt 1000 \
+-T AUTO \
+--bnni \
+--prefix 03_IQ_TREE_Run/Issidae_Final_Tree \
+-redo
+
+一、 核心命令剖析 (The Anatomy of a Command)
+一条标准的、用于发表文章的 IQ-TREE 命令通常长这样：
+
+Bash
+iqtree3 -s 数据.fasta -p 分区.txt -B 1000 --alrt 1000 -T AUTO --bnni --prefix 结果名
+
+我们将其拆解为四大模块来讲解：
+1. 输入与输出模块 (Input/Output)
+
+-s [文件名] (Sequence)
+含义：指定输入的序列比对文件（Alignment）。
+支持格式：FASTA (.fasta, .fas), PHYLIP (.phy), NEXUS (.nex)。
+你的用法：-s Issidae_Supermatrix.fasta。
+
+-p [文件名] (Partition)
+含义：指定分区模型文件。这是多基因联合分析的灵魂。
+作用：告诉软件“不要把这几千个碱基当成一团乱麻，前段是线粒体，后段是核基因，进化速率不一样”。
+你的用法：-p Issidae_Partitions.txt (我们之前生成的 RAxML 格式)。
+注：使用 -p 后，IQ-TREE 会自动启用 ModelFinder 为每个分区单独寻找最佳进化模型。
+
+--prefix [前缀]
+含义：指定输出文件名的前缀。
+作用：如果不写这个，输出文件会叫 Issidae_Supermatrix.fasta.treefile，很难看且容易覆盖。
+建议：指定输出目录和名字，如 --prefix 03_IQ_TREE_Run/Issidae_Final。指定把文件输出到 03_IQ_TREE_Run目录下，如果这个目录没有会报错，提前建好（mkdir  03_IQ_TREE_Run)，以Issidae_Final开头的文件名。
+
+-redo
+含义：强制覆盖旧结果。
+场景：当你因为参数设置错误想重跑，或者像刚才那样加了外群想重跑时，必须加这个，否则软件为了保护数据会自动停止。
+
+2. 建树与模型模块 (Tree Search & Models)
+
+-m [模型] (Model)
+含义：手动指定进化模型。
+默认行为：如果你不写 -m，且使用了 -p，IQ-TREE 默认使用 -m MFP (ModelFinder Plus)，即自动测试并寻找最佳模型，然后用该模型建树。
+专家建议：保持默认（不写 -m）。让软件自己算比你瞎猜要准得多。
+
+--bnni (Bootstrap with NNI)
+含义：在进行超快自展（UFBoot）时，引入“最近邻交换”（NNI）搜索策略。
+作用：这是为了解决 UFBoot 早期版本可能高估支持率的问题。
+结论：必加。这能让你的支持率数据更经得起推敲。
+
+3. 支持率检验模块 (Bootstrap & Validation)
+这是决定你论文中进化树分支上那个数字（0-100）的关键参数。
+
+-B [数字] (Ultrafast Bootstrap)
+含义：进行超快速自展检验。
+推荐值：1000（标准）或 5000（追求极致）。
+解读：这就是通常意义上的“支持率”。≥ 95% 为强支持。
+对比：不要用小写的 -b，那是传统 Bootstrap，跑起来极慢（可能要几天），且对大数据集来说并不一定比 -B 准。
+
+--alrt [数字] (SH-aLRT Test)
+含义：Shimodaira-Hasegawa 近似似然比检验。
+推荐值：1000。
+作用：这是给支持率上的“双保险”。
+解读：如果一个节点 UFBoot ≥ 95% 且 SH-aLRT ≥ 80%，那么这个分支关系被认为是极其可靠的。
+
+4. 性能控制模块 (Performance)
+-T [核心数/AUTO] (Threads)
+含义：指定使用多少个 CPU 核心。
+推荐值：AUTO。
+作用：IQ-TREE 会自动检测你的 M3 Pro 有多少核，并计算最佳并行效率。M3 Pro 跑起来非常快。
