@@ -1,3 +1,4 @@
+这个是执行iqtree建树的命令：
 iqtree3 \
 -s 02_Input_Data/Issidae_Supermatrix.fasta \
 -p 02_Input_Data/Issidae_Partitions.txt \
